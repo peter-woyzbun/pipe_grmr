@@ -19,6 +19,10 @@ class PipeTypeException(PipeException):
     """ Wrong class type exception. """
     pass
 
+class PipeOutputException(PipeTypeException):
+    """ Pipe output of wrong type exception. """
+    pass
+
 
 class PipeMethodException(PipeException):
     """ Class pipe method exception. """
@@ -89,7 +93,12 @@ def pipe_to_cls_method(target_class, method_name=None):
                 # Check if method exists.
                 self._method_exists(other, method)
                 # Pass arguments to the given instance and method.
-                return getattr(other, method)(*self.data['args'], **self.data['kwargs'])
+                output = getattr(other, method)(*self.data['args'], **self.data['kwargs'])
+                if not isinstance(output, target_class):
+                    raise PipeOutputException("Output of piped method is not of type %s"
+                                              % target_class.__name__)
+                else:
+                    return output
 
             def __rshift__(self, other):
                 """
@@ -111,6 +120,13 @@ def pipe_to_cls_method(target_class, method_name=None):
                 """ Raise an exception if the piped instance class method is not defined. """
                 if not hasattr(other, method):
                     raise PipeMethodException("Method '%s' is not defined." % method)
+
+            @staticmethod
+            def _valid_output(output):
+                """ Raise exception if output type of pipe is not of given target class type. """
+                if not isinstance(output, target_class):
+                    raise PipeOutputException("Output of piped method is not of type %s"
+                                              % target_class.__name__)
 
         return Pipe
     return wrapper
