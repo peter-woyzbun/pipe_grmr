@@ -19,6 +19,7 @@ class PipeTypeException(PipeException):
     """ Wrong class type exception. """
     pass
 
+
 class PipeOutputException(PipeTypeException):
     """ Pipe output of wrong type exception. """
     pass
