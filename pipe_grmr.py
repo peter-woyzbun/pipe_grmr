@@ -1,12 +1,58 @@
-from exceptions import PipeTypeException, PipeMethodException
+# --------------------------------------
+# pipe_grmr.py
+
+# Package for creating 'pipe-able' class methods.
+
+__author__ = "Peter Woyzbun"
 
 
-def pipe_to_cls_method(target_class):
+# ======================================
+# Exceptions
+# --------------------------------------
+
+class PipeException(Exception):
+    """ Generic pipe exception. """
+    pass
+
+
+class PipeTypeException(PipeException):
+    """ Wrong class type exception. """
+    pass
+
+
+class PipeMethodException(PipeException):
+    """ Class pipe method exception. """
+    pass
+
+
+# ======================================
+# Pipe Class Decorator
+# --------------------------------------
+
+def add_pipe(klass):
+    """
+    Passes __rshift__ operator behaviour/method to wrapped class.
+
+    """
+    def __rshift__(self, other):
+        return other >> self
+    return type(klass.__name__, (klass,), {'__rshift__': __rshift__})
+
+
+# ======================================
+# Pipe Function Decorator
+# --------------------------------------
+
+def pipe_to_cls_method(target_class, method_name=None):
     """
     Wraps a function and passes its arguments to method of the same name
     defined in the given parent class.
-    
+
     :param target_class: Class type/object
+    :param method_name: Optional. If no method_name is given, the class
+    target class method is assumed to have the same name as the wrapped
+    function.
+
     :return: Output of target class method
     """
     def wrapper(fcn):
@@ -36,11 +82,22 @@ def pipe_to_cls_method(target_class):
                 # Check if piped in class object is of correct instance.
                 self._is_instance(other)
                 # Get the function name.
-                method = self.data['function'].__name__
+                if method_name is None:
+                    method = self.data['function'].__name__
+                else:
+                    method = method_name
                 # Check if method exists.
                 self._method_exists(other, method)
                 # Pass arguments to the given instance and method.
                 return getattr(other, method)(*self.data['args'], **self.data['kwargs'])
+
+            def __rshift__(self, other):
+                """
+                Override the 'left-side' '>>' operator using same behaviour as the
+                'right-side' '>>' operator (__rrshift__).
+
+                """
+                return self.__rrshift__(other)
 
             @staticmethod
             def _is_instance(other):
@@ -57,17 +114,3 @@ def pipe_to_cls_method(target_class):
 
         return Pipe
     return wrapper
-
-
-class AttrPipeMixin(object):
-
-    def __init__(self, type_attr_map):
-        self.type_attr_map = type_attr_map
-
-    def __rrshift__(self, other):
-        """
-        Override the '>>' operator in order to allow for 'piping' in of...
-
-        """
-        pass
-
