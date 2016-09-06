@@ -45,7 +45,7 @@ def add_pipe(klass):
 
 
 # ======================================
-# Pipe Function Decorator
+# Pipe Function Decorators
 # --------------------------------------
 
 def pipe_to_cls_method(target_class, method_name=None):
@@ -131,3 +131,34 @@ def pipe_to_cls_method(target_class, method_name=None):
 
         return Pipe
     return wrapper
+
+
+def static_pipe_method(original):
+    """
+    ...
+
+    """
+    class StaticPipe(object):
+        data = {'function': original}
+
+        def __init__(self, *args, **kwargs):
+            self.data['args'] = args
+            self.data['kwargs'] = kwargs
+
+        def __rrshift__(self, other):
+            return self.data['function'](
+                other,
+                *self.data['args'],
+                **self.data['kwargs']
+            )
+
+        def __rshift__(self, other):
+            """
+            Override the 'left-side' '>>' operator using same behaviour as the
+            'right-side' '>>' operator (__rrshift__).
+
+            """
+            return self.__rrshift__(other)
+
+    return StaticPipe
+
